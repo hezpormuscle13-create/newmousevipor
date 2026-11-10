@@ -26,10 +26,18 @@ jobs:
       - name: Accept SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
-      - name: Find project folder
+      - name: Find project folder (tu giai nen zip neu can)
         run: |
-          S=$(find . -name settings.gradle -not -path '*/node_modules/*' | head -1)
-          if [ -z "$S" ]; then echo "Khong tim thay settings.gradle"; find . -maxdepth 3 | head -50; exit 1; fi
+          S=$(find . -name settings.gradle -not -path './.git/*' | head -1)
+          if [ -z "$S" ]; then
+            Z=$(find . -maxdepth 2 -name '*.zip' -not -path './.git/*' | head -1)
+            if [ -n "$Z" ]; then
+              echo "Giai nen $Z"
+              mkdir -p _src && unzip -q -o "$Z" -d _src
+              S=$(find _src -name settings.gradle | head -1)
+            fi
+          fi
+          if [ -z "$S" ]; then echo "Khong tim thay settings.gradle"; exit 1; fi
           echo "PROJECT_DIR=$(dirname "$S")" >> $GITHUB_ENV
 
       - name: Build debug APK
